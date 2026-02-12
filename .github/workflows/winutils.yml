@@ -95,15 +95,19 @@ jobs:
       - name: Build native
         shell: pwsh
         run: |
-          cd hadoop-$env:HADOOP_VERSION-src\hadoop-common-project\hadoop-common\src\main\native
-          Get-ChildItem -Recurse -Include *.c,*.h | ForEach-Object { (Get-Content $_ -Raw) -replace '\bGetFileInformationByName\b','HadoopGetFileInformationByName' | Set-Content $_ -Encoding UTF8 }
-          $javahOut = "..\..\..\target\native\javah"
+          cd hadoop-$env:HADOOP_VERSION-src
+          $root="$(pwd)"
+          $javahOut="$root\target\native\javah"
           New-Item -ItemType Directory -Force -Path $javahOut | Out-Null
+          mvn -pl hadoop-common -am -DskipTests compile
+          cd hadoop-common-project\hadoop-common\src\main\
           javac -h $javahOut `
-            -classpath "..\..\..\target\classes" `
-            "..\java\org\apache\hadoop\io\nativeio\NativeIO.java" `
-            "..\java\org\apache\hadoop\security\JniBasedUnixGroupsMapping.java" `
-            "..\java\org\apache\hadoop\util\NativeCrc32.java"
+            -classpath "$root\target\classes" `
+            java\org\apache\hadoop\io\nativeio\NativeIO.java `
+            java\org\apache\hadoop\security\JniBasedUnixGroupsMapping.java `
+            java\org\apache\hadoop\util\NativeCrc32.java
+          cd native
+          Get-ChildItem -Recurse -Include *.c,*.h | ForEach-Object { (Get-Content $_ -Raw) -replace '\bGetFileInformationByName\b','HadoopGetFileInformationByName' | Set-Content $_ -Encoding UTF8 }
           msbuild native.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:ForcePlatformToolset=true /p:WindowsTargetPlatformVersion=10.0 /p:OutDir=bin\ /p:IntermediateOutputPath=\native\
 
 
