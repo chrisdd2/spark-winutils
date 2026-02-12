@@ -64,7 +64,27 @@ jobs:
           echo "HADOOP_VERSION=$HADOOP_VERSION" >> $GITHUB_ENV
 
       # ------------------------------------------------------------
-      # Download Hadoop source (fail fast if wrong)
+      # Download Hadoop binaries (for native libraries)
+      # ------------------------------------------------------------
+      - name: Download Hadoop binaries
+        shell: bash
+        run: |
+          set -e
+
+          HADOOP_VERSION="${HADOOP_VERSION}"
+          HADOOP_BIN_URL="https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz"
+
+          echo "Downloading Hadoop binaries: $HADOOP_BIN_URL"
+          curl -f -L -o hadoop-bin.tar.gz "$HADOOP_BIN_URL"
+
+          # Fail fast if we downloaded HTML or garbage
+          file hadoop-bin.tar.gz
+          test "$(stat -c%s hadoop-bin.tar.gz)" -gt 1000000
+
+          tar -xzf hadoop-bin.tar.gz
+
+      # ------------------------------------------------------------
+      # Download Hadoop source (for winutils)
       # ------------------------------------------------------------
       - name: Download Hadoop source
         shell: bash
@@ -72,10 +92,10 @@ jobs:
           set -e
 
           HADOOP_VERSION="${HADOOP_VERSION}"
-          HADOOP_URL="https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}-src.tar.gz"
+          HADOOP_SRC_URL="https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}-src.tar.gz"
 
-          echo "Downloading Hadoop source: $HADOOP_URL"
-          curl -f -L -o hadoop-src.tar.gz "$HADOOP_URL"
+          echo "Downloading Hadoop source: $HADOOP_SRC_URL"
+          curl -f -L -o hadoop-src.tar.gz "$HADOOP_SRC_URL"
 
           # Fail fast if we downloaded HTML or garbage
           file hadoop-src.tar.gz
@@ -103,8 +123,15 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist/bin
+          # Copy built winutils files
           cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.exe dist/bin/
           cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.lib dist/bin/
+          # Copy native DLLs from Hadoop binary distribution
+          cp hadoop-${HADOOP_VERSION}/lib/native/*.dll dist/bin/ 2>/dev/null || true
+          cp hadoop-${HADOOP_VERSION}/lib/native/*.lib dist/bin/ 2>/dev/null || true
+          # Copy bin scripts
+          cp hadoop-${HADOOP_VERSION}/bin/*.exe dist/bin/ 2>/dev/null || true
+          cp hadoop-${HADOOP_VERSION}/bin/*.cmd dist/bin/ 2>/dev/null || true
 
       # ------------------------------------------------------------
       # Release handling (overwrite if exists)
