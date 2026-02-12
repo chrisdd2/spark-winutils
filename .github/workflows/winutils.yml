@@ -97,6 +97,13 @@ jobs:
         run: |
           cd hadoop-$env:HADOOP_VERSION-src\hadoop-common-project\hadoop-common\src\main\native
           Get-ChildItem -Recurse -Include *.c,*.h | ForEach-Object { (Get-Content $_ -Raw) -replace '\bGetFileInformationByName\b','HadoopGetFileInformationByName' | Set-Content $_ -Encoding UTF8 }
+          $javahOut = "..\..\..\target\native\javah"
+          New-Item -ItemType Directory -Force -Path $javahOut | Out-Null
+          javac -h $javahOut `
+            -classpath "..\..\..\target\classes" `
+            src\org\apache\hadoop\io\nativeio\NativeIO.java `
+            src\org\apache\hadoop\security\JniBasedUnixGroupsMapping.java `
+            src\org\apache\hadoop\util\NativeCrc32.java
           msbuild native.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:ForcePlatformToolset=true /p:WindowsTargetPlatformVersion=10.0 /p:OutDir=bin\ /p:IntermediateOutputPath=\native\
 
 
