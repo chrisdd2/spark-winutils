@@ -90,7 +90,7 @@ jobs:
         shell: cmd
         run: |
           cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common
-          mvn generate-sources -DskipTests -q
+          mvn generate-sources -DskipTests -q -Dexec.skip=true
 
       # ------------------------------------------------------------
       # Build winutils.exe using msbuild on the winutils solution
