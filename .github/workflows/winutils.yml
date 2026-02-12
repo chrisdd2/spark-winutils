@@ -28,11 +28,12 @@ jobs:
           maven-version: 3.9.6
 
       # ------------------------------------------------------------
-      # Install Visual Studio (required for native win build)
+      # Install Visual Studio and Windows SDK (required for native win build)
       # ------------------------------------------------------------
       - name: Install Visual Studio
         run: |
           choco install -y visualstudio2022community --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.ATL"
+          choco install -y windows-sdk-10.0.18362 --version 10.0.18362.1
 
       # ------------------------------------------------------------
       # Validate Spark tag exists and resolve Hadoop version
@@ -88,7 +89,7 @@ jobs:
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
           cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common\src\main\winutils
-          msbuild winutils.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:WsceConfigDir="../etc/config" /p:WsceConfigFile="wsce-site.xml"
+          msbuild winutils.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:WindowsTargetPlatformVersion=10.0.18362.0 /p:WsceConfigDir="../etc/config" /p:WsceConfigFile="wsce-site.xml"
 
       # ------------------------------------------------------------
       # Prepare artifact
