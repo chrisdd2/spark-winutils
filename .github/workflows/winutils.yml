@@ -1,0 +1,67 @@
+name: Build and Release winutils.exe
+
+on:
+  workflow_dispatch:
+    inputs:
+      hadoop_version:
+        description: "Hadoop version for Spark (e.g. 3.3.6)"
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 8 (required by Hadoop native)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+
+      - name: Setup Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.6
+
+      - name: Download Hadoop source
+        shell: bash
+        run: |
+          curl -L -o hadoop-src.tar.gz \
+            https://archive.apache.org/dist/hadoop/common/hadoop-${{ inputs.hadoop_version }}/hadoop-${{ inputs.hadoop_version }}-src.tar.gz
+          tar -xzf hadoop-src.tar.gz
+
+      - name: Build winutils.exe (native-win)
+        shell: powershell
+        run: |
+          cd hadoop-${{ inputs.hadoop_version }}-src\hadoop-common-project\hadoop-common
+          mvn package `
+            -Pdist,native-win `
+            -DskipTests `
+            -Dtar `
+            -Dmaven.javadoc.skip=true
+
+      - name: Prepare artifact
+        run: |
+          mkdir dist
+          copy hadoop-${{ inputs.hadoop_version }}-src\hadoop-common-project\hadoop-common\target\bin\winutils.exe dist\winutils.exe
+
+      - name: Delete existing release (if any)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete winutils-${{ inputs.hadoop_version }} --yes || true
+
+      - name: Create release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create winutils-${{ inputs.hadoop_version }} \
+            dist/winutils.exe \
+            --title "winutils for Spark (Hadoop ${{ inputs.hadoop_version }})" \
+            --notes "winutils.exe built with native-win profile for Spark on Windows"
