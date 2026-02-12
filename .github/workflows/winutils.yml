@@ -77,9 +77,9 @@ jobs:
       # Build winutils.exe (Spark-correct native-win profile)
       # ------------------------------------------------------------
       - name: Build winutils.exe
-        shell: powershell
+        shell: bash
         run: |
-          cd hadoop-${env:HADOOP_VERSION}-src\hadoop-common-project\hadoop-common
+          cd hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common
           mvn package -Pdist,native-win -DskipTests -Dtar -Dmaven.javadoc.skip=true
 
       # ------------------------------------------------------------
