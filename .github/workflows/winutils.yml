@@ -97,15 +97,28 @@ jobs:
           msbuild winutils.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:WsceConfigDir="../etc/config" /p:WsceConfigFile="wsce-site.xml"
 
       # ------------------------------------------------------------
-      # Prepare artifact
+      # Build hadoop.dll native library
+      # ------------------------------------------------------------
+      - name: Build hadoop.dll
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
+          cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common\src\main\native
+          msbuild native.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
+
+      # ------------------------------------------------------------
+      # Prepare artifact with all native files
       # ------------------------------------------------------------
       - name: Prepare winutils artifact
         shell: bash
         run: |
-          mkdir dist
-          cp \
-            hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/winutils.exe \
-            dist/winutils.exe
+          mkdir -p dist/bin
+          # Copy winutils files
+          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.exe dist/bin/ 2>/dev/null || true
+          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.lib dist/bin/ 2>/dev/null || true
+          # Copy hadoop native files
+          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/native/native/*.dll dist/bin/ 2>/dev/null || true
+          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/native/native/*.lib dist/bin/ 2>/dev/null || true
 
       # ------------------------------------------------------------
       # Release handling (overwrite if exists)
@@ -123,6 +136,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create winutils-${HADOOP_VERSION} \
-            dist/winutils.exe \
+            dist/bin/* \
             --title "winutils for Spark ${{ inputs.spark_version }}" \
-            --notes "winutils.exe built from Hadoop ${HADOOP_VERSION}, as required by Spark ${{ inputs.spark_version }}"
+            --notes "Native binaries built from Hadoop ${HADOOP_VERSION}, as required by Spark ${{ inputs.spark_version }}"
