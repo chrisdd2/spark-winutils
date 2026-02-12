@@ -80,11 +80,7 @@ jobs:
         shell: powershell
         run: |
           cd hadoop-${env:HADOOP_VERSION}-src\hadoop-common-project\hadoop-common
-          mvn package `
-            -Pdist,native-win `
-            -DskipTests `
-            -Dtar `
-            -Dmaven.javadoc.skip=true
+          mvn package -Pdist,native-win -DskipTests -Dtar -Dmaven.javadoc.skip=true
 
       # ------------------------------------------------------------
       # Prepare artifact
