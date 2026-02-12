@@ -89,6 +89,7 @@ jobs:
         shell: cmd
         run: |
           cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common\src\main\winutils
+          Get-ChildItem -Recurse -Include *.c,*.h | ForEach-Object { (Get-Content $_ -Raw) -replace '\bGetFileInformationByName\b','HadoopGetFileInformationByName' | Set-Content $_ -Encoding UTF8 }
           msbuild winutils.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:ForcePlatformToolset=true /p:WindowsTargetPlatformVersion=10.0 /p:OutDir=bin\ /p:IntermediateOutputPath=\Winutils\ /p:WsceConfigDir="../etc/config" /p:WsceConfigFile="wsce-site.xml"
           
           
@@ -96,6 +97,7 @@ jobs:
         shell: cmd
         run: |
           cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common\src\main\native
+          Get-ChildItem -Recurse -Include *.c,*.h | ForEach-Object { (Get-Content $_ -Raw) -replace '\bGetFileInformationByName\b','HadoopGetFileInformationByName' | Set-Content $_ -Encoding UTF8 }
           msbuild native.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:ForcePlatformToolset=true /p:WindowsTargetPlatformVersion=10.0 /p:OutDir=bin\ /p:IntermediateOutputPath=\native\
 
 
