@@ -89,8 +89,8 @@ jobs:
           call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
           cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common\src\main\winutils
           :: Patch GetFileInformationByName conflict with Windows SDK 10.0.26100+
-          powershell -Command "(Get-Content include\winutils.h) -replace 'GetFileInformationByName','HadoopGetFileInformationByName' | Set-Content include\winutils.h"
-          powershell -Command "(Get-Content winutils.c) -replace 'GetFileInformationByName','HadoopGetFileInformationByName' | Set-Content winutils.c"
+          powershell -Command "(Get-ChildItem -Recurse -Filter '*.c' -Name) | ForEach-Object { (Get-Content $_) -replace 'GetFileInformationByName','HadoopGetFileInformationByName' | Set-Content $_ }"
+          powershell -Command "(Get-ChildItem -Recurse -Filter '*.h' -Name) | ForEach-Object { (Get-Content $_) -replace 'GetFileInformationByName','HadoopGetFileInformationByName' | Set-Content $_ }"
           msbuild winutils.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:WsceConfigDir="../etc/config" /p:WsceConfigFile="wsce-site.xml"
 
       # ------------------------------------------------------------
