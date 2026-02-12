@@ -88,7 +88,7 @@ jobs:
         run: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
           cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common\src\main\winutils
-          msbuild winutils.sln /p:Configuration=Release /p:Platform=x64
+          msbuild winutils.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:WsceConfigDir="../etc/config" /p:WsceConfigFile="wsce-site.xml"
 
       # ------------------------------------------------------------
       # Prepare artifact
