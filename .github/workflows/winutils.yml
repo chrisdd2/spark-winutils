@@ -100,12 +100,13 @@ jobs:
       # Prepare artifact and zip it
       # ------------------------------------------------------------
       - name: Prepare winutils artifact
-        shell: bash
+        shell: powershell
         run: |
-          mkdir -p dist
-          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.exe dist/
-          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.lib dist/
-          zip -r winutils-${HADOOP_VERSION}.zip dist/
+          $HADOOP_VERSION = $env:HADOOP_VERSION
+          mkdir dist
+          cp "hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.exe" dist/
+          cp "hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.lib" dist/
+          Compress-Archive -Path dist/* -DestinationPath "winutils-${HADOOP_VERSION}.zip" -Force
 
       # ------------------------------------------------------------
       # Release handling (overwrite if exists)
