@@ -42,7 +42,7 @@ jobs:
           curl -f -L "$SPARK_POM_URL" -o spark-pom.xml
 
           HADOOP_VERSION=$(xmllint --xpath \
-            "string(//project/properties/hadoop.version)" \
+            "string(//*[local-name()='properties']/*[local-name()='hadoop.version']/text())" \
             spark-pom.xml)
 
           if [ -z "$HADOOP_VERSION" ]; then
