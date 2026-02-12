@@ -101,9 +101,9 @@ jobs:
           New-Item -ItemType Directory -Force -Path $javahOut | Out-Null
           javac -h $javahOut `
             -classpath "..\..\..\target\classes" `
-            src\org\apache\hadoop\io\nativeio\NativeIO.java `
-            src\org\apache\hadoop\security\JniBasedUnixGroupsMapping.java `
-            src\org\apache\hadoop\util\NativeCrc32.java
+            "..\java\org\apache\hadoop\io\nativeio\NativeIO.java" `
+            "..\java\org\apache\hadoop\security\JniBasedUnixGroupsMapping.java" `
+            "..\java\org\apache\hadoop\util\NativeCrc32.java"
           msbuild native.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:ForcePlatformToolset=true /p:WindowsTargetPlatformVersion=10.0 /p:OutDir=bin\ /p:IntermediateOutputPath=\native\
 
 
