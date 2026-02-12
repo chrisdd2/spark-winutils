@@ -85,16 +85,19 @@ jobs:
       # ------------------------------------------------------------
       # Build winutils.exe using msbuild on the winutils solution
       # ------------------------------------------------------------
-      - name: Build winutils.exe
+      - name: Build winutils
         shell: cmd
         run: |
           cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common\src\main\winutils
-          msbuild winutils.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:OutDir=bin\ /p:IntermediateOutputPath=\Winutils\ /p:WsceCOnfigDir="../etc/config" /p:WsceConfigFile="wsce-site.xml"
-      - name: Build winutils.exe
+          msbuild winutils.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:ForcePlatformToolset=true /p:WindowsTargetPlatformVersion=10.0 /p:OutDir=bin\ /p:IntermediateOutputPath=\Winutils\ /p:WsceConfigDir="../etc/config" /p:WsceConfigFile="wsce-site.xml"
+          
+          
+      - name: Build native
         shell: cmd
         run: |
           cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common\src\main\native
-          msbuild native.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:OutDir=bin\ /p:IntermediateOutputPath=\native\"
+          msbuild native.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:ForcePlatformToolset=true /p:WindowsTargetPlatformVersion=10.0 /p:OutDir=bin\ /p:IntermediateOutputPath=\native\
+
 
 
       # ------------------------------------------------------------
