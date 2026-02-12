@@ -84,15 +84,6 @@ jobs:
           tar -xzf hadoop-src.tar.gz
 
       # ------------------------------------------------------------
-      # Generate JNI headers for native library
-      # ------------------------------------------------------------
-      - name: Generate JNI headers
-        shell: cmd
-        run: |
-          cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common
-          mvn generate-sources -DskipTests -q -Dexec.skip=true
-
-      # ------------------------------------------------------------
       # Build winutils.exe using msbuild on the winutils solution
       # ------------------------------------------------------------
       - name: Build winutils.exe
@@ -106,28 +97,14 @@ jobs:
           msbuild winutils.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:WsceConfigDir="../etc/config" /p:WsceConfigFile="wsce-site.xml"
 
       # ------------------------------------------------------------
-      # Build hadoop.dll native library
-      # ------------------------------------------------------------
-      - name: Build hadoop.dll
-        shell: cmd
-        run: |
-          call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" amd64
-          cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common\src\main\native
-          msbuild native.sln /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143
-
-      # ------------------------------------------------------------
-      # Prepare artifact with all native files
+      # Prepare artifact
       # ------------------------------------------------------------
       - name: Prepare winutils artifact
         shell: bash
         run: |
           mkdir -p dist/bin
-          # Copy winutils files
-          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.exe dist/bin/ 2>/dev/null || true
-          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.lib dist/bin/ 2>/dev/null || true
-          # Copy hadoop native files
-          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/native/native/*.dll dist/bin/ 2>/dev/null || true
-          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/native/native/*.lib dist/bin/ 2>/dev/null || true
+          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.exe dist/bin/
+          cp hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/src/main/winutils/x64/Release/*.lib dist/bin/
 
       # ------------------------------------------------------------
       # Release handling (overwrite if exists)
