@@ -28,6 +28,13 @@ jobs:
           maven-version: 3.9.6
 
       # ------------------------------------------------------------
+      # Install Visual Studio (required for native win build)
+      # ------------------------------------------------------------
+      - name: Install Visual Studio
+        run: |
+          choco install -y visualstudio2022community --package-parameters "--add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.VC.ATL"
+
+      # ------------------------------------------------------------
       # Validate Spark tag exists and resolve Hadoop version
       # ------------------------------------------------------------
       - name: Resolve Hadoop version from Spark POM
