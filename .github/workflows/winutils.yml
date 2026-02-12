@@ -1,10 +1,10 @@
-name: Build and Release winutils.exe
+name: Build and Release winutils.exe for Spark
 
 on:
   workflow_dispatch:
     inputs:
-      hadoop_version:
-        description: "Hadoop version for Spark (e.g. 3.3.6)"
+      spark_version:
+        description: "Spark version (e.g. 3.5.1)"
         required: true
         type: string
 
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Java 8 (required by Hadoop native)
+      - name: Setup Java 8 (required by Hadoop native build)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -27,41 +27,92 @@ jobs:
         with:
           maven-version: 3.9.6
 
+      # ------------------------------------------------------------
+      # Validate Spark tag exists and resolve Hadoop version
+      # ------------------------------------------------------------
+      - name: Resolve Hadoop version from Spark POM
+        shell: bash
+        run: |
+          set -e
+
+          SPARK_VERSION="${{ inputs.spark_version }}"
+          SPARK_POM_URL="https://raw.githubusercontent.com/apache/spark/v${SPARK_VERSION}/pom.xml"
+
+          echo "Fetching Spark POM: $SPARK_POM_URL"
+          curl -f -L "$SPARK_POM_URL" -o spark-pom.xml
+
+          HADOOP_VERSION=$(xmllint --xpath \
+            "string(//project/properties/hadoop.version)" \
+            spark-pom.xml)
+
+          if [ -z "$HADOOP_VERSION" ]; then
+            echo "Failed to resolve Hadoop version from Spark ${SPARK_VERSION}"
+            exit 1
+          fi
+
+          echo "Resolved Hadoop version: $HADOOP_VERSION"
+          echo "HADOOP_VERSION=$HADOOP_VERSION" >> $GITHUB_ENV
+
+      # ------------------------------------------------------------
+      # Download Hadoop source (fail fast if wrong)
+      # ------------------------------------------------------------
       - name: Download Hadoop source
         shell: bash
         run: |
-          curl -L -o hadoop-src.tar.gz \
-            https://archive.apache.org/dist/hadoop/common/hadoop-${{ inputs.hadoop_version }}/hadoop-${{ inputs.hadoop_version }}-src.tar.gz
+          set -e
+
+          HADOOP_VERSION="${HADOOP_VERSION}"
+          HADOOP_URL="https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}-src.tar.gz"
+
+          echo "Downloading Hadoop source: $HADOOP_URL"
+          curl -f -L -o hadoop-src.tar.gz "$HADOOP_URL"
+
+          # Fail fast if we downloaded HTML or garbage
+          file hadoop-src.tar.gz
+          test "$(stat -c%s hadoop-src.tar.gz)" -gt 1000000
+
           tar -xzf hadoop-src.tar.gz
 
-      - name: Build winutils.exe (native-win)
+      # ------------------------------------------------------------
+      # Build winutils.exe (Spark-correct native-win profile)
+      # ------------------------------------------------------------
+      - name: Build winutils.exe
         shell: powershell
         run: |
-          cd hadoop-${{ inputs.hadoop_version }}-src\hadoop-common-project\hadoop-common
+          cd hadoop-${env:HADOOP_VERSION}-src\hadoop-common-project\hadoop-common
           mvn package `
             -Pdist,native-win `
             -DskipTests `
             -Dtar `
             -Dmaven.javadoc.skip=true
 
-      - name: Prepare artifact
+      # ------------------------------------------------------------
+      # Prepare artifact
+      # ------------------------------------------------------------
+      - name: Prepare winutils artifact
+        shell: bash
         run: |
           mkdir dist
-          copy hadoop-${{ inputs.hadoop_version }}-src\hadoop-common-project\hadoop-common\target\bin\winutils.exe dist\winutils.exe
+          cp \
+            hadoop-${HADOOP_VERSION}-src/hadoop-common-project/hadoop-common/target/bin/winutils.exe \
+            dist/winutils.exe
 
+      # ------------------------------------------------------------
+      # Release handling (overwrite if exists)
+      # ------------------------------------------------------------
       - name: Delete existing release (if any)
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release delete winutils-${{ inputs.hadoop_version }} --yes || true
+          gh release delete winutils-${HADOOP_VERSION} --yes || true
 
-      - name: Create release
+      - name: Create GitHub release
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create winutils-${{ inputs.hadoop_version }} \
+          gh release create winutils-${HADOOP_VERSION} \
             dist/winutils.exe \
-            --title "winutils for Spark (Hadoop ${{ inputs.hadoop_version }})" \
-            --notes "winutils.exe built with native-win profile for Spark on Windows"
+            --title "winutils for Spark ${{ inputs.spark_version }}" \
+            --notes "winutils.exe built from Hadoop ${HADOOP_VERSION}, as required by Spark ${{ inputs.spark_version }}"
