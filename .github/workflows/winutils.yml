@@ -84,6 +84,15 @@ jobs:
           tar -xzf hadoop-src.tar.gz
 
       # ------------------------------------------------------------
+      # Generate JNI headers for native library
+      # ------------------------------------------------------------
+      - name: Generate JNI headers
+        shell: cmd
+        run: |
+          cd hadoop-%HADOOP_VERSION%-src\hadoop-common-project\hadoop-common
+          mvn generate-sources -DskipTests -q
+
+      # ------------------------------------------------------------
       # Build winutils.exe using msbuild on the winutils solution
       # ------------------------------------------------------------
       - name: Build winutils.exe
