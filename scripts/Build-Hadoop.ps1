@@ -58,7 +58,7 @@ function Build-Hadoop {
     }
     Write-Host "Using MSBuild: $msbuild"
 
-    # Build winutils
+    # Build winutils first (native depends on libwinutils.lib)
     Write-Host "Building winutils..."
     $WinutilsRoot = Join-Path $Destination "$WinutilsRepositoryBasePath\src\main\winutils"
 
@@ -76,17 +76,24 @@ function Build-Hadoop {
         throw "Winutils build failed"
     }
 
-    # Try to copy binaries to bin dir (needed for hadoop natives)
+    # Copy libwinutils.lib to native project (native build depends on it)
+    $NativeLibDir = Join-Path $Destination "$WinutilsRepositoryBasePath\src\main\native\lib"
+    New-Item -Path $NativeLibDir -ItemType Directory -Force | Out-Null
+    if (Test-Path -Path $WinutilsX64Path -PathType Container) {
+        Copy-Item "$WinutilsX64Path\libwinutils.lib" -Destination "$NativeLibDir\"
+        Copy-Item "$WinutilsX64Path\winutils.exe" -Destination "$BinDir\"
+    } elseif (Test-Path -Path $WinutilsX32Path -PathType Container) {
+        Copy-Item "$WinutilsX32Path\libwinutils.lib" -Destination "$NativeLibDir\"
+        Copy-Item "$WinutilsX32Path\winutils.exe" -Destination "$BinDir\"
+    }
+
+    # Copy remaining binaries to bin dir
     New-Item -Path $BinDir -ItemType Directory -Force | Out-Null
     if (Test-Path -Path $WinutilsX64Path -PathType Container) {
-        Copy-Item "$WinutilsX64Path\libwinutils.lib" -Destination "$BinDir\"
         Copy-Item "$WinutilsX64Path\libwinutils.pdb" -Destination "$BinDir\"
-        Copy-Item "$WinutilsX64Path\winutils.exe" -Destination "$BinDir\"
         Copy-Item "$WinutilsX64Path\winutils.pdb" -Destination "$BinDir\"
     } elseif (Test-Path -Path $WinutilsX32Path -PathType Container) {
-        Copy-Item "$WinutilsX32Path\libwinutils.lib" -Destination "$BinDir\"
         Copy-Item "$WinutilsX32Path\libwinutils.pdb" -Destination "$BinDir\"
-        Copy-Item "$WinutilsX32Path\winutils.exe" -Destination "$BinDir\"
         Copy-Item "$WinutilsX32Path\winutils.pdb" -Destination "$BinDir\"
     }
 
