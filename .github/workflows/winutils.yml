@@ -16,6 +16,8 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup Java 8 (required by Hadoop native build)
         uses: actions/setup-java@v5.2.0
@@ -29,7 +31,7 @@ jobs:
           maven-version: 3.9.6
 
       # ------------------------------------------------------------
-      # Install ms build
+      # Add msbuild to PATH
       # ------------------------------------------------------------
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v2
@@ -83,31 +85,18 @@ jobs:
           tar -xzf hadoop-src.tar.gz
 
       # ------------------------------------------------------------
-      # Build winutils and dlls using msbuild on the winutils solution
+      # Build native and winutils using the scripts
       # ------------------------------------------------------------
-      - name: Build native
+      - name: Build native and winutils
         shell: pwsh
         run: |
-          cd hadoop-$env:HADOOP_VERSION-src
-          $root="$(pwd)"
-          $javahOut="$root\target\native\javah"
-          New-Item -ItemType Directory -Force -Path $javahOut | Out-Null
-          mvn -pl hadoop-common-project/hadoop-common -am -DskipTests compile
-          cd hadoop-common-project\hadoop-common\src\main\
-          javac -h $javahOut `
-            -classpath "$root\target\classes" `
-            java\org\apache\hadoop\io\nativeio\NativeIO.java `
-            java\org\apache\hadoop\security\JniBasedUnixGroupsMapping.java `
-            java\org\apache\hadoop\util\NativeCrc32.java
-          cd native
-          Get-ChildItem -Recurse -Include *.c,*.h | ForEach-Object { (Get-Content $_ -Raw) -replace '\bGetFileInformationByName\b','HadoopGetFileInformationByName' | Set-Content $_ -Encoding UTF8 }
-          msbuild native.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:ForcePlatformToolset=true /p:WindowsTargetPlatformVersion=10.0 /p:OutDir=bin\ /p:IntermediateOutputPath=\native\
-      - name: Build winutils
-        shell: pwsh
-        run: |
-          cd hadoop-$env:HADOOP_VERSION-src\hadoop-common-project\hadoop-common\src\main\winutils
-          Get-ChildItem -Recurse -Include *.c,*.h | ForEach-Object { (Get-Content $_ -Raw) -replace '\bGetFileInformationByName\b','HadoopGetFileInformationByName' | Set-Content $_ -Encoding UTF8 }
-          msbuild winutils.sln /nologo /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=v143 /p:ForcePlatformToolset=true /p:WindowsTargetPlatformVersion=10.0 /p:OutDir=bin\ /p:IntermediateOutputPath=\Winutils\ /p:WsceConfigDir="../etc/config" /p:WsceConfigFile="wsce-site.xml"
+          $ErrorActionPreference = "Stop"
+
+          # Source the build script
+          . "${{ github.workspace }}/scripts/Build-Hadoop.ps1"
+
+          $Destination = "hadoop-$env:HADOOP_VERSION-src"
+          Build-Hadoop -Version $env:HADOOP_VERSION -Destination $Destination -SkipGetHadoop
       
 
 
